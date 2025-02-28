@@ -251,7 +251,7 @@
             return div;
         }
 
-        function toggleMetadata(eventId) {
+        window.toggleMetadata = function(eventId) {
             const metadata = document.getElementById(`metadata-${eventId}`);
             const toggle = metadata.previousElementSibling;
             
