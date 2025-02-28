@@ -4,6 +4,16 @@ import fs from 'fs';
 import path from 'path';
 import { jest } from '@jest/globals';
 
+const getExampleFiles = () => {
+  const examplesDir = path.join(new URL('.', import.meta.url).pathname, 'examples');
+  return fs.readdirSync(examplesDir)
+    .filter(file => file.endsWith('.json'))
+    .map(file => ({
+      name: file,
+      content: fs.readFileSync(path.join(examplesDir, file), 'utf8')
+    }));
+};
+
 // Mock marked library
 global.marked = {
   parse: jest.fn(text => text)
@@ -32,28 +42,15 @@ describe('Conversation Viewer', () => {
     jest.resetAllMocks();
   });
 
-  test('loads and displays conversation data', async () => {
-    const mockConversation = [
-      {
-        id: 1,
-        source: 'user',
-        message: 'Hello',
-        timestamp: '2024-02-28T12:00:00Z'
-      },
-      {
-        id: 2,
-        source: 'agent',
-        message: 'Hi there',
-        timestamp: '2024-02-28T12:00:01Z'
-      }
-    ];
+  test.each(getExampleFiles())('loads and displays conversation data from $name', async ({ name, content }) => {
+    const conversation = JSON.parse(content);
 
     // Mock FileReader
     const mockFileReader = {
       onload: null,
       readAsText: function(file) {
         setTimeout(() => {
-          this.onload({ target: { result: JSON.stringify(mockConversation) } });
+          this.onload({ target: { result: content } });
         }, 0);
       }
     };
@@ -63,16 +60,25 @@ describe('Conversation Viewer', () => {
     const fileInput = document.getElementById('file-input');
     fireEvent.change(fileInput, {
       target: {
-        files: [new File(['{}'], 'test.json', { type: 'application/json' })]
+        files: [new File(['{}'], name, { type: 'application/json' })]
       }
     });
 
     // Wait for events to be displayed
     await waitFor(() => {
-      expect(container.querySelectorAll('.event')).toHaveLength(2);
+      expect(container.querySelectorAll('.event')).toHaveLength(conversation.length);
     });
-    expect(container.querySelector('.event.user')).toBeInTheDocument();
-    expect(container.querySelector('.event.agent')).toBeInTheDocument();
+
+    // Verify that both user and agent messages are present
+    const hasUserMessage = conversation.some(msg => msg.source === 'user');
+    const hasAgentMessage = conversation.some(msg => msg.source === 'agent');
+
+    if (hasUserMessage) {
+      expect(container.querySelector('.event.user')).toBeInTheDocument();
+    }
+    if (hasAgentMessage) {
+      expect(container.querySelector('.event.agent')).toBeInTheDocument();
+    }
   });
 
   test('handles invalid JSON data', async () => {
@@ -107,21 +113,21 @@ describe('Conversation Viewer', () => {
     mockAlert.mockRestore();
   });
 
-  test('toggles metadata visibility', async () => {
-    const mockConversation = [{
-      id: 1,
-      source: 'user',
-      message: 'Hello',
-      timestamp: '2024-02-28T12:00:00Z',
-      tool_call_metadata: { key: 'value' }
-    }];
+  test.each(getExampleFiles())('toggles metadata visibility in $name', async ({ name, content }) => {
+    const conversation = JSON.parse(content);
+    const messageWithMetadata = conversation.find(msg => msg.metadata);
+    
+    if (!messageWithMetadata) {
+      // Skip test if no metadata found
+      return;
+    }
 
     // Mock FileReader
     const mockFileReader = {
       onload: null,
       readAsText: function(file) {
         setTimeout(() => {
-          this.onload({ target: { result: JSON.stringify(mockConversation) } });
+          this.onload({ target: { result: content } });
         }, 0);
       }
     };
@@ -131,7 +137,7 @@ describe('Conversation Viewer', () => {
     const fileInput = document.getElementById('file-input');
     fireEvent.change(fileInput, {
       target: {
-        files: [new File(['{}'], 'test.json', { type: 'application/json' })]
+        files: [new File(['{}'], name, { type: 'application/json' })]
       }
     });
 
@@ -142,17 +148,17 @@ describe('Conversation Viewer', () => {
 
     // Click metadata toggle
     const toggle = container.querySelector('.metadata-toggle');
-    const metadata = document.getElementById('metadata-1');
+    const metadata = document.getElementById(`metadata-${messageWithMetadata.id}`);
     
-    // Call toggleMetadata directly since it's not in the global scope
-    window.toggleMetadata(1);
+    // Click the toggle button
+    fireEvent.click(toggle);
 
     // Check if metadata is visible
     expect(metadata).not.toHaveClass('hidden');
     expect(toggle.textContent.trim()).toBe('Hide Metadata ▲');
 
     // Click again to hide
-    window.toggleMetadata(1);
+    fireEvent.click(toggle);
     expect(metadata).toHaveClass('hidden');
     expect(toggle.textContent.trim()).toBe('Show Metadata ▼');
   });

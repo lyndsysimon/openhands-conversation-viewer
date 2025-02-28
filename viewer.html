@@ -238,7 +238,7 @@
             
             if (Object.keys(metadata).length > 0) {
                 content += `
-                    <div class="metadata-toggle" onclick="toggleMetadata(${event.id})">
+                    <div class="metadata-toggle" data-event-id="${event.id}">
                         Show Metadata ▼
                     </div>
                     <div id="metadata-${event.id}" class="metadata hidden">
@@ -248,20 +248,26 @@
             }
 
             div.innerHTML = headerContent + content;
-            return div;
-        }
-
-        window.toggleMetadata = function(eventId) {
-            const metadata = document.getElementById(`metadata-${eventId}`);
-            const toggle = metadata.previousElementSibling;
             
-            if (metadata.classList.contains('hidden')) {
-                metadata.classList.remove('hidden');
-                toggle.textContent = 'Hide Metadata ▲';
-            } else {
-                metadata.classList.add('hidden');
-                toggle.textContent = 'Show Metadata ▼';
+            // Add event listener to metadata toggle
+            const toggle = div.querySelector('.metadata-toggle');
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    const eventId = this.getAttribute('data-event-id');
+                    const metadata = document.getElementById(`metadata-${eventId}`);
+                    const toggle = metadata.previousElementSibling;
+                    
+                    if (metadata.classList.contains('hidden')) {
+                        metadata.classList.remove('hidden');
+                        toggle.textContent = 'Hide Metadata ▲';
+                    } else {
+                        metadata.classList.add('hidden');
+                        toggle.textContent = 'Show Metadata ▼';
+                    }
+                });
             }
+            
+            return div;
         }
 
         function loadConversation(conversation) {
