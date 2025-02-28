@@ -2,9 +2,10 @@
   "name": "openhands-conversation-viewer",
   "version": "1.0.0",
   "description": "A viewer for OpenHands conversations",
+  "type": "module",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
