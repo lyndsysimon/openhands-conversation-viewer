@@ -2,6 +2,7 @@ import { screen, fireEvent } from '@testing-library/dom';
 import '@testing-library/jest-dom';
 import fs from 'fs';
 import path from 'path';
+import { jest } from '@jest/globals';
 
 // Mock marked library
 global.marked = {
