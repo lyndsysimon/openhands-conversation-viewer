@@ -1,0 +1,10 @@
+exclude:
+  - node_modules
+  - package.json
+  - package-lock.json
+  - jest.config.js
+  - tests
+  - test_*.js
+  - server.log
+  - _data
+  - README.md

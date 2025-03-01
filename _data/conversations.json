@@ -1,8 +1,0 @@
----
----
-[{% for file in site.static_files %}{% if file.path contains '/conversations/' and file.extname == '.json' %}
-  {
-    "name": "{{ file.name }}",
-    "path": "{{ file.path }}"
-  }{% unless forloop.last %},{% endunless %}{% endif %}{% endfor %}
-]
