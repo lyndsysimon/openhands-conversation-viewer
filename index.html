@@ -404,7 +404,7 @@
 
         // Function to list available conversations
         function listConversations() {
-            fetch('_data/conversations.json')
+            fetch('conversations.json')
                 .then(response => response.json())
                 .then(files => {
                     const filesDiv = document.getElementById('conversation-files');
