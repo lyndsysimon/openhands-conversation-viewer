@@ -12,17 +12,13 @@ permissions:
   pull-requests: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: "pages-${{ github.event.pull_request.number }}"
-  cancel-in-progress: false
+  group: "pages-pr-${{ github.event.pull_request.number }}"
+  cancel-in-progress: true
 
 jobs:
-  build-preview:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: pr-preview-${{ github.event.pull_request.number }}
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,12 +40,19 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
-      - name: Deploy PR Preview
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
           preview: true
-          path: ./_site
+          token: ${{ github.token }}
 
       - name: Add Preview URL to Job Summary
         run: |
