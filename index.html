@@ -194,9 +194,9 @@
         <label class="upload-btn" for="file-input" style="margin-right: 10px;">
             Upload Conversation JSON
         </label>
-        <button id="choose-conversation" class="upload-btn">
+        <label class="upload-btn" id="choose-conversation" style="margin-right: 10px;">
             Choose Conversation
-        </button>
+        </label>
         <input type="file" id="file-input" accept=".json">
     </div>
     <div id="file-list" class="hidden" style="margin: 20px auto; max-width: 1200px; background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px;">
@@ -402,14 +402,14 @@
 
         // Function to list available conversations
         function listConversations() {
-            fetch('conversations/')
+            fetch('conversations')
                 .then(response => response.text())
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const files = Array.from(doc.querySelectorAll('a'))
                         .filter(a => a.href.endsWith('.json'))
-                        .map(a => a.href.split('/').pop());
+                        .map(a => decodeURIComponent(a.href.split('/').pop()));
 
                     const filesDiv = document.getElementById('conversation-files');
                     filesDiv.innerHTML = '';
