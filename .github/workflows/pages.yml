@@ -26,6 +26,10 @@ jobs:
           ruby-version: '3.2'
       - name: Setup Pages
         uses: actions/configure-pages@v4
+      - name: Generate file list
+        run: |
+          chmod +x ./scripts/generate_file_list.sh
+          ./scripts/generate_file_list.sh
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
