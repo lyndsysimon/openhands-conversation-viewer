@@ -24,7 +24,7 @@ describe('Conversation Viewer', () => {
 
   beforeEach(() => {
     // Load the HTML file
-    const html = fs.readFileSync(new URL('../viewer.html', import.meta.url), 'utf8');
+    const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     document.documentElement.innerHTML = html;
     container = document.body;
 
