@@ -191,10 +191,17 @@
                 <span class="source-badge source-environment">Environment</span>
             </label>
         </div>
-        <label class="upload-btn" for="file-input">
+        <label class="upload-btn" for="file-input" style="margin-right: 10px;">
             Upload Conversation JSON
         </label>
+        <button id="choose-conversation" class="upload-btn">
+            Choose Conversation
+        </button>
         <input type="file" id="file-input" accept=".json">
+    </div>
+    <div id="file-list" class="hidden" style="margin: 20px auto; max-width: 1200px; background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px;">
+        <h3>Available Conversations:</h3>
+        <div id="conversation-files"></div>
     </div>
     <div class="container">
         <div id="timeline" class="timeline"></div>
@@ -365,33 +372,118 @@
             checkbox.addEventListener('change', updateVisibility);
         });
 
+        // Function to load conversation from URL
+        function loadConversationFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const conversationFile = urlParams.get('conversation');
+            if (conversationFile) {
+                fetch(`conversations/${conversationFile}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(conversation => {
+                        loadConversation(conversation);
+                    })
+                    .catch(error => {
+                        console.error('Error loading conversation:', error);
+                        document.getElementById('timeline').innerHTML = `
+                            <div style="text-align: center; padding: 20px; color: #666;">
+                                <h2>Error Loading Conversation</h2>
+                                <p>${error.message}</p>
+                                <p>Please check the file path and try again.</p>
+                            </div>
+                        `;
+                    });
+            }
+        }
+
+        // Function to list available conversations
+        function listConversations() {
+            fetch('conversations/')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const files = Array.from(doc.querySelectorAll('a'))
+                        .filter(a => a.href.endsWith('.json'))
+                        .map(a => a.href.split('/').pop());
+
+                    const filesDiv = document.getElementById('conversation-files');
+                    filesDiv.innerHTML = '';
+                    
+                    files.forEach(file => {
+                        const fileLink = document.createElement('div');
+                        fileLink.style.padding = '8px';
+                        fileLink.style.cursor = 'pointer';
+                        fileLink.style.borderBottom = '1px solid #e0e0e0';
+                        fileLink.textContent = file;
+                        fileLink.addEventListener('mouseover', () => {
+                            fileLink.style.backgroundColor = '#f5f5f5';
+                        });
+                        fileLink.addEventListener('mouseout', () => {
+                            fileLink.style.backgroundColor = 'transparent';
+                        });
+                        fileLink.addEventListener('click', () => {
+                            const newUrl = new URL(window.location.href);
+                            newUrl.searchParams.set('conversation', file);
+                            window.history.pushState({}, '', newUrl);
+                            loadConversationFromUrl();
+                            document.getElementById('file-list').classList.add('hidden');
+                        });
+                        filesDiv.appendChild(fileLink);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error listing conversations:', error);
+                });
+        }
+
+        // Add click handler for the Choose Conversation button
+        document.getElementById('choose-conversation').addEventListener('click', () => {
+            const fileList = document.getElementById('file-list');
+            if (fileList.classList.contains('hidden')) {
+                listConversations();
+                fileList.classList.remove('hidden');
+            } else {
+                fileList.classList.add('hidden');
+            }
+        });
+
         // Check URL parameters for file
         const urlParams = new URLSearchParams(window.location.search);
         const fileParam = urlParams.get('file');
+        const conversationParam = urlParams.get('conversation');
         
         // Load specified file or example.json by default
-        const fileToLoad = fileParam ? `conversations/${fileParam}` : 'example.json';
-        
-        fetch(fileToLoad)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(conversation => {
-                loadConversation(conversation);
-            })
-            .catch(error => {
-                console.error(`Error loading ${fileToLoad}:`, error);
-                document.getElementById('timeline').innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #666;">
-                        <h2>Error Loading Conversation</h2>
-                        <p>${error.message}</p>
-                        <p>Please check the file path and try again.</p>
-                    </div>
-                `;
-            });
+        if (conversationParam) {
+            loadConversationFromUrl();
+        } else {
+            const fileToLoad = fileParam ? `conversations/${fileParam}` : 'example.json';
+            
+            fetch(fileToLoad)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(conversation => {
+                    loadConversation(conversation);
+                })
+                .catch(error => {
+                    console.error(`Error loading ${fileToLoad}:`, error);
+                    document.getElementById('timeline').innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #666;">
+                            <h2>Error Loading Conversation</h2>
+                            <p>${error.message}</p>
+                            <p>Please check the file path and try again.</p>
+                        </div>
+                    `;
+                });
+        }
     </script>
 </body>
 </html>
