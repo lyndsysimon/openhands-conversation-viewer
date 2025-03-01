@@ -159,7 +159,9 @@
             color: white;
             border-radius: 4px;
             cursor: pointer;
-            margin-bottom: 20px;
+            margin: 0 10px;
+            border: none;
+            font-size: 1em;
             transition: background 0.3s ease;
         }
         .upload-btn:hover {
@@ -191,12 +193,12 @@
                 <span class="source-badge source-environment">Environment</span>
             </label>
         </div>
-        <label class="upload-btn" for="file-input" style="margin-right: 10px;">
+        <button class="upload-btn" onclick="document.getElementById('file-input').click()">
             Upload Conversation JSON
-        </label>
-        <label class="upload-btn" id="choose-conversation" style="margin-right: 10px;">
+        </button>
+        <button class="upload-btn" id="choose-conversation">
             Choose Conversation
-        </label>
+        </button>
         <input type="file" id="file-input" accept=".json">
     </div>
     <div id="file-list" class="hidden" style="margin: 20px auto; max-width: 1200px; background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px;">
@@ -402,15 +404,9 @@
 
         // Function to list available conversations
         function listConversations() {
-            fetch('conversations')
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const files = Array.from(doc.querySelectorAll('a'))
-                        .filter(a => a.href.endsWith('.json'))
-                        .map(a => decodeURIComponent(a.href.split('/').pop()));
-
+            fetch('_data/conversations.json')
+                .then(response => response.json())
+                .then(files => {
                     const filesDiv = document.getElementById('conversation-files');
                     filesDiv.innerHTML = '';
                     
@@ -419,7 +415,7 @@
                         fileLink.style.padding = '8px';
                         fileLink.style.cursor = 'pointer';
                         fileLink.style.borderBottom = '1px solid #e0e0e0';
-                        fileLink.textContent = file;
+                        fileLink.textContent = file.name;
                         fileLink.addEventListener('mouseover', () => {
                             fileLink.style.backgroundColor = '#f5f5f5';
                         });
@@ -428,7 +424,7 @@
                         });
                         fileLink.addEventListener('click', () => {
                             const newUrl = new URL(window.location.href);
-                            newUrl.searchParams.set('conversation', file);
+                            newUrl.searchParams.set('conversation', file.name);
                             window.history.pushState({}, '', newUrl);
                             loadConversationFromUrl();
                             document.getElementById('file-list').classList.add('hidden');
